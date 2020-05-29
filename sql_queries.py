@@ -128,3 +128,44 @@ region 'us-west-2'
 format as json 'auto';
 """).format(config["IAM_ROLE"]["ARN"])
 
+
+# INSERTION INTO FINAL TABLES
+
+songplay_table_insert = ("""
+insert into songplays (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent) \
+(select dateadd(millisecond, ts, '1970-01-01 00:00:00'), userId, level, song_id, artist_id, sessionId, location, userAgent \
+from song_event_log left outer join songs_info on \
+(songs_info.title=song_event_log.song \
+and songs_info.artist_name=song_event_log.artist \
+and songs_info.duration=song_event_log.length) \
+where page='NextSong'
+);
+""")
+
+user_table_insert = ("""
+insert into users \
+(select userId, firstName, lastName, gender, level \
+from song_event_log where page='NextSong');
+""")
+
+song_table_insert = ("""
+insert into songs \
+(select song_id, title, artist_id, year, duration from songs_info);
+""")
+
+artist_table_insert = ("""
+insert into artists \
+(select artist_id, artist_name, artist_location, artist_latitude, artist_longitude from songs_info);
+""")
+
+time_table_insert = ("""
+insert into time \
+(select dateadd(millisecond, ts, '1970-01-01 00:00:00') as main_time, \
+extract(hour from main_time), \
+extract(day from main_time), \
+extract(week from main_time), \
+extract(month from main_time), \
+extract(year from main_time), \
+extract(dayofweek from main_time) \
+from song_event_log where page='NextSong');
+""")

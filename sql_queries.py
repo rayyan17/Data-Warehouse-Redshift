@@ -1,3 +1,11 @@
+import configparser
+
+
+# CONFIG
+config = configparser.ConfigParser()
+config.read('dwh.cfg')
+
+
 """Data Manipulation Queries"""
 
 
@@ -102,3 +110,21 @@ month INTEGER NOT NULL, \
 year INTEGER NOT NULL, \
 weekda INTEGER NOT NULL);
 """)
+
+
+# STAGING TABLES
+
+staging_events_copy = ("""
+copy song_event_log from 's3://udacity-dend/log_data/' 
+credentials 'aws_iam_role={}'
+region 'us-west-2'
+format as json 's3://udacity-dend/log_json_path.json' ;
+""").format(config["IAM_ROLE"]["ARN"])
+
+staging_songs_copy = ("""
+copy songs_info from 's3://udacity-dend/song_data/' 
+credentials 'aws_iam_role={}'
+region 'us-west-2'
+format as json 'auto';
+""").format(config["IAM_ROLE"]["ARN"])
+
